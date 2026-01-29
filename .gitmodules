@@ -1,3 +1,0 @@
-[submodule "libs/clob-client"]
-	path = libs/clob-client
-	url = git@github.com:jonas-meng/clob-client.git
