@@ -3,11 +3,32 @@ import axios from "axios";
 import type { Method } from "axios";
 import type { DropNotificationParams, GetRfqQuotesParams, GetRfqRequestsParams, OrdersScoringParams, SimpleHeaders } from "../types.ts";
 import { isBrowser } from "browser-or-node";
+import { SocksProxyAgent } from "socks-proxy-agent";
 
 export const GET = "GET";
 export const POST = "POST";
 export const DELETE = "DELETE";
 export const PUT = "PUT";
+
+// Global proxy configuration
+let proxyAgent: SocksProxyAgent | null = null;
+
+/**
+ * Set SOCKS proxy for all HTTP requests
+ * @param proxyUrl - SOCKS proxy URL (e.g., "socks5://user:pass@host:port")
+ */
+export const setProxy = (proxyUrl: string | null): void => {
+    if (proxyUrl) {
+        proxyAgent = new SocksProxyAgent(proxyUrl);
+    } else {
+        proxyAgent = null;
+    }
+};
+
+/**
+ * Get current proxy agent
+ */
+export const getProxyAgent = (): SocksProxyAgent | null => proxyAgent;
 
 const overloadHeaders = (method: Method, headers?: SimpleHeaders) => {
     if (isBrowser) {
@@ -38,7 +59,12 @@ export const request = async (
     params?: any,
 ): Promise<any> => {
     overloadHeaders(method, headers);
-    return await axios({ method, url: endpoint, headers, data, params });
+    const config: any = { method, url: endpoint, headers, data, params };
+    if (proxyAgent) {
+        config.httpsAgent = proxyAgent;
+        config.httpAgent = proxyAgent;
+    }
+    return await axios(config);
 };
 
 export type QueryParams = Record<string, any>;
